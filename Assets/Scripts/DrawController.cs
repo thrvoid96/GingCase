@@ -77,21 +77,64 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
             chuteObj.TryGetComponent<IPooledObject>(out var deactivateable);
             deactivateable?.OnObjectDeactivated();
         }
-        //CreateMesh();
+        CreateMesh();
         pointsList.Clear();
-        //lineRenderer.positionCount = 0;
+        lineRenderer.positionCount = 0;
     }
     
     public void CreateMesh()
     {
-        if (pointsList.Count > 0)
+        if (pointsList.Count >= 3)
         {
             chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute, Vector3.zero, Quaternion.identity, null).GetComponent<Chute>();
-
             Mesh mesh = new Mesh();
-            mesh.SetVertices(pointsList);
-            mesh.SetColors(Enumerable.Repeat(Color.black, pointsList.Count).ToList());
-            mesh.SetIndices(Enumerable.Range(0, pointsList.Count).ToArray(), MeshTopology.LineStrip, 0);
+
+            var upList = new List<Vector3>();
+            var downList = new List<Vector3>();
+            var rightList = new List<Vector3>();
+            var leftList = new List<Vector3>();
+            var finalList = new List<Vector3>();
+            
+            for (int i = 1; i < pointsList.Count - 1; i++)
+            {
+                upList.Add(pointsList[i] + (Vector3.up * 0.1f * (i/(float)pointsList.Count)));
+                downList.Add(pointsList[i] + (Vector3.down * 0.1f * (i/(float)pointsList.Count)));
+                rightList.Add(pointsList[i] + (Vector3.right * 0.1f * (i/(float)pointsList.Count)));
+                leftList.Add(pointsList[i] + (Vector3.left * 0.1f * (i/(float)pointsList.Count)));
+            }
+
+            finalList.Add(pointsList[0]);
+            for (int i = 0; i < upList.Count; i++)
+            {
+                finalList.Add(upList[i]);
+                finalList.Add(downList[i]);
+                finalList.Add(rightList[i]);
+                finalList.Add(leftList[i]);
+            }
+            finalList.Add(pointsList[pointsList.Count-1]);
+            
+            // Assign the points to the mesh's vertices
+            mesh.vertices = finalList.ToArray();
+            int[] triangles = new int[upList.Count * 8];
+            int triangleIndex = 0;
+
+            // First generate the middle set of triangles 
+            for (int i = 1; i < pointsList.Count/2; i++)
+            {
+                triangles[triangleIndex++] = 0;
+                triangles[triangleIndex++] = i;
+                triangles[triangleIndex++] = i + 1;
+            }
+            // Then generate the second half of the triangles 
+            for (int i = pointsList.Count / 2 +1; i < pointsList.Count-1; i++)
+            {
+                triangles[triangleIndex++] = i;
+                triangles[triangleIndex++] = i + 1;
+                triangles[triangleIndex++] = pointsList.Count-1;
+            }
+            mesh.triangles = triangles;
+            mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
+            mesh.RecalculateNormals();
             
             chuteObj.meshFilter.mesh = mesh;
             chuteObj.meshCollider.sharedMesh = mesh;
