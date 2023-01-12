@@ -87,51 +87,49 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
         if (pointsList.Count >= 3)
         {
             chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute, Vector3.zero, Quaternion.identity, null).GetComponent<Chute>();
-            Mesh mesh = new Mesh();
+            var mesh = chuteObj.meshFilter.mesh;
+            mesh.Clear();
 
             var upList = new List<Vector3>();
             var downList = new List<Vector3>();
-            var rightList = new List<Vector3>();
-            var leftList = new List<Vector3>();
+            var forwardList = new List<Vector3>();
+            var backList = new List<Vector3>();
             var finalList = new List<Vector3>();
             
             for (int i = 1; i < pointsList.Count - 1; i++)
             {
-                upList.Add(pointsList[i] + (Vector3.up * 0.1f * (i/(float)pointsList.Count)));
-                downList.Add(pointsList[i] + (Vector3.down * 0.1f * (i/(float)pointsList.Count)));
-                rightList.Add(pointsList[i] + (Vector3.right * 0.1f * (i/(float)pointsList.Count)));
-                leftList.Add(pointsList[i] + (Vector3.left * 0.1f * (i/(float)pointsList.Count)));
+                backList.Add(pointsList[i] + Vector3.back + Vector3.right);
+                upList.Add(pointsList[i] + Vector3.up + Vector3.right);
+                forwardList.Add(pointsList[i] + Vector3.forward + Vector3.right);
+                downList.Add(pointsList[i] + Vector3.down + Vector3.right);
             }
 
             finalList.Add(pointsList[0]);
             for (int i = 0; i < upList.Count; i++)
             {
+                finalList.Add(forwardList[i]);
                 finalList.Add(upList[i]);
+                finalList.Add(backList[i]);
                 finalList.Add(downList[i]);
-                finalList.Add(rightList[i]);
-                finalList.Add(leftList[i]);
             }
-            finalList.Add(pointsList[pointsList.Count-1]);
+            finalList.Add(pointsList[pointsList.Count-1] + Vector3.right);
             
             // Assign the points to the mesh's vertices
             mesh.vertices = finalList.ToArray();
-            int[] triangles = new int[upList.Count * 8];
-            int triangleIndex = 0;
+            mesh.uv = ConvertArray(mesh.vertices);
+            
+            int[] triangles = new int[upList.Count * 8 * 3];
+            int index = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                triangles[index] = 0;
+                triangles[index + 1] = i + 1;
+                triangles[index + 2] = i + 2;
+                index += 3;
+            }
 
-            // First generate the middle set of triangles 
-            for (int i = 1; i < pointsList.Count/2; i++)
-            {
-                triangles[triangleIndex++] = 0;
-                triangles[triangleIndex++] = i;
-                triangles[triangleIndex++] = i + 1;
-            }
-            // Then generate the second half of the triangles 
-            for (int i = pointsList.Count / 2 +1; i < pointsList.Count-1; i++)
-            {
-                triangles[triangleIndex++] = i;
-                triangles[triangleIndex++] = i + 1;
-                triangles[triangleIndex++] = pointsList.Count-1;
-            }
+            triangles[11] = 1;
+            
             mesh.triangles = triangles;
             mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
             mesh.RecalculateNormals();
@@ -146,5 +144,14 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
         pointsList.Add(position);
         lineRenderer.positionCount = pointsList.Count;
         lineRenderer.SetPositions(pointsList.ToArray());
+    }
+    
+    Vector2[] ConvertArray(Vector3[] v3){
+        Vector2 [] v2 = new Vector2[v3.Length];
+        for(int i = 0; i <  v3.Length; i++){
+            Vector3 tempV3 = v3[i];
+            v2[i] = new Vector2(tempV3.x, tempV3.y);
+        }
+        return v2;
     }
 }
