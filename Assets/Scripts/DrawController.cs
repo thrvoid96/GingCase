@@ -86,7 +86,7 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
     {
         if (pointsList.Count >= 3)
         {
-            chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute, Vector3.zero, Quaternion.identity, null).GetComponent<Chute>();
+            chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute,Vector3.zero , Quaternion.identity, null).transform.GetChild(0).GetComponent<Chute>();
             var mesh = chuteObj.meshFilter.mesh;
             mesh.Clear();
 
@@ -174,6 +174,11 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
             
             chuteObj.meshFilter.mesh = mesh;
             chuteObj.meshCollider.sharedMesh = mesh;
+
+            var parent = chuteObj.transform.parent;
+            chuteObj.transform.SetParent(null);
+            parent.transform.position = chuteObj.meshCollider.bounds.center;
+            chuteObj.transform.SetParent(parent);
         }
     }
 
