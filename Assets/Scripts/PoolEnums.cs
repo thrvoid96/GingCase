@@ -1,4 +1,5 @@
 public enum PoolEnums
 {
-    Chute
+    Chute,
+    Balloon
 }
