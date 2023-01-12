@@ -141,4 +141,9 @@ public class ObjectPool : Singleton<ObjectPool>
     {
         return pools.Find(p => p.poolEnum.Equals(poolEnum));
     }
+    
+    public Transform GetPoolParent(PoolEnums poolEnum)
+    {
+        return poolParents[(int) poolEnum];
+    }
 }

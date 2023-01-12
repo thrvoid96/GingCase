@@ -51,3 +51,7 @@ MonoBehaviour:
   - poolEnum: 1
     prefab: {fileID: 269455621159542173, guid: d82603ffdfd84974eb41c65b9cba5440, type: 3}
     size: 1000
+  - poolEnum: 2
+    prefab: {fileID: 1037439316879909677, guid: 6112ecefd966743409e94efb576d978d,
+      type: 3}
+    size: 1000

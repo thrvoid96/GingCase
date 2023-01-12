@@ -18,27 +18,6 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
     public void OnPointerEnter(PointerEventData eventData)
     {
         canDraw = true;
-
-        if (!isDrawing) return;
-        if (pointsList.Count == 0) return;
-        
-        var startPoint = pointsList[pointsList.Count - 1];
-        Draw(eventData.position);
-        var endPoint = pointsList[pointsList.Count - 1];
-        pointsList.RemoveAt(pointsList.Count - 1);
-        lineRenderer.positionCount = pointsList.Count;
-            
-        float distance = Vector3.Distance(startPoint, endPoint);
-        float pointDistance = 0.2f; 
-        int numPoints = (int)(distance / pointDistance);
-        float increment = 1.0f / (numPoints + 1);
-
-        for (int i = 0; i < numPoints; i++) {
-            float t = increment * (i + 1);
-                
-            Vector3 point = Vector3.Lerp(startPoint, endPoint, t);
-            UpdatePointsList(point);
-        }
     }
     
 
@@ -49,7 +28,9 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        Draw(eventData.position);
+        Vector3 touchPos = Camera.main.transform.InverseTransformPoint(Camera.main.ScreenToWorldPoint(new Vector3(eventData.position.x, eventData.position.y, 7f)));
+        UpdatePointsList(touchPos);
+        
         isDrawing = true;
     }
 
@@ -62,9 +43,23 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
     {
         if (canDraw)
         {
-            Vector3 touchPos = Camera.main.transform.InverseTransformPoint(Camera.main.ScreenToWorldPoint(new Vector3(position.x, position.y, 10f)));
+            var startPoint = pointsList[pointsList.Count - 1];
+            Vector3 touchPos = Camera.main.transform.InverseTransformPoint(Camera.main.ScreenToWorldPoint(new Vector3(position.x, position.y, 7f)));
+            
+            var distance = Vector3.Distance(startPoint, touchPos);
+            
+            if (distance< 0.25f) { return; }
+            
+            float pointDistance = 0.25f;
+            int numPoints = (int)(distance / pointDistance);
+            float increment = 1.0f / (numPoints + 1);
 
-            UpdatePointsList(touchPos);
+            for (int i = 0; i < numPoints; i++) {
+                float t = increment * (i + 1);
+                
+                Vector3 point = Vector3.Lerp(startPoint, touchPos, t);
+                UpdatePointsList(point);
+            }
         }
     }
 
@@ -77,111 +72,29 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
             chuteObj.TryGetComponent<IPooledObject>(out var deactivateable);
             deactivateable?.OnObjectDeactivated();
         }
-        CreateMesh();
+        //CreateMesh();
+        CreateFakeMesh();
         pointsList.Clear();
         lineRenderer.positionCount = 0;
     }
-    
-    public void CreateMesh()
+
+    private void CreateFakeMesh()
     {
-        if (pointsList.Count >= 3)
+        chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute,Vector3.zero , Quaternion.identity, null).transform.GetChild(0).GetComponent<Chute>();
+        
+        for (int i = 0; i < pointsList.Count; i++)
         {
-            chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute,Vector3.zero , Quaternion.identity, null).transform.GetChild(0).GetComponent<Chute>();
-            var mesh = chuteObj.meshFilter.mesh;
-            mesh.Clear();
-
-            var upList = new List<Vector3>();
-            var downList = new List<Vector3>();
-            var forwardList = new List<Vector3>();
-            var backList = new List<Vector3>();
-            var finalList = new List<Vector3>();
-            
-            for (int i = 1; i < pointsList.Count - 1; i++)
-            {
-                backList.Add(pointsList[i] + Vector3.back + Vector3.right);
-                upList.Add(pointsList[i] + Vector3.up + Vector3.right);
-                forwardList.Add(pointsList[i] + Vector3.forward + Vector3.right);
-                downList.Add(pointsList[i] + Vector3.down + Vector3.right);
-            }
-
-            finalList.Add(pointsList[0]);
-            for (int i = 0; i < upList.Count; i++)
-            {
-                finalList.Add(backList[i]);
-                finalList.Add(upList[i]);
-                finalList.Add(forwardList[i]);
-                finalList.Add(downList[i]);
-            }
-            finalList.Add(pointsList[pointsList.Count-1] + (2f*Vector3.right));
-
-            // Assign the points to the mesh's vertices
-            mesh.vertices = finalList.ToArray();
-            mesh.uv = ConvertArray(mesh.vertices);
-            
-            List<int> triangles = new List<int>();
-            for (int i = 0; i < 4; i++)
-            {
-                triangles.Add(0);
-                triangles.Add(i + 2);
-                triangles.Add(i + 1);
-            }
-            
-            triangles[10] = 1;
-            
-            if (backList.Count>1)
-            {
-                for (int i = 0; i < backList.Count-1; i++)
-                {
-                    triangles.Add((i*4)+1);
-                    triangles.Add((i*4)+6);
-                    triangles.Add((i*4)+5);
-                    
-                }
-                for (int i = 0; i < upList.Count-1; i++)
-                {
-                    triangles.Add((i*4)+2);
-                    triangles.Add((i*4)+7);
-                    triangles.Add((i*4)+6);
-                    
-                }
-                for (int i = 0; i < forwardList.Count-1; i++)
-                {
-                    triangles.Add((i*4)+3);
-                    triangles.Add((i*4)+8);
-                    triangles.Add((i*4)+7);
-                   
-                }
-                for (int i = 0; i < downList.Count-1; i++)
-                {
-                    triangles.Add((i*4)+4);
-                    triangles.Add((i*4)+5);
-                    triangles.Add((i*4)+8);
-                }
-            }
-            
-            for (int i = finalList.Count-5; i < finalList.Count - 1; i++)
-            {
-                triangles.Add(finalList.Count - 1);
-                triangles.Add(i);
-                triangles.Add(i + 1);
-            }
-            
-            triangles[triangles.Count - 1] = finalList.Count - 5;
-            
-            mesh.triangles = triangles.ToArray();
-            mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
-            mesh.RecalculateNormals();
-            
-            chuteObj.meshFilter.mesh = mesh;
-            chuteObj.meshCollider.sharedMesh = mesh;
-
-            var parent = chuteObj.transform.parent;
-            chuteObj.transform.SetParent(null);
-            parent.transform.position = chuteObj.meshCollider.bounds.center;
-            chuteObj.transform.SetParent(parent);
+            ObjectPool.Instance.SpawnFromPool(PoolEnums.ChutePart, pointsList[i], Quaternion.Euler(new Vector3(90f,0f,0f)), chuteObj.transform);
         }
+        
+        var parent = chuteObj.transform.parent;
+        var center = chuteObj.rb.centerOfMass;
+        chuteObj.transform.SetParent(null);
+        parent.transform.position = center;
+        chuteObj.transform.SetParent(parent);
+        parent.transform.position = Vector3.zero;
     }
-
+    
     private void UpdatePointsList(Vector3 position)
     {
         pointsList.Add(position);
@@ -197,4 +110,129 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
         }
         return v2;
     }
+    
+    // private void CreateMesh()
+    // {
+    //     if (pointsList.Count >= 3)
+    //     {
+    //         chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute,Vector3.zero , Quaternion.identity, null).transform.GetChild(0).GetComponent<Chute>();
+    //         var mesh = chuteObj.meshFilter.mesh;
+    //         mesh.Clear();
+    //
+    //         var upList = new List<Vector3>();
+    //         var downList = new List<Vector3>();
+    //         var forwardList = new List<Vector3>();
+    //         var backList = new List<Vector3>();
+    //         var finalList = new List<Vector3>();
+    //
+    //         Vector3 direction = new Vector3();
+    //         for (int i = 1; i < pointsList.Count - 1; i++)
+    //         {
+    //             if (pointsList[i].x < pointsList[i+1].x)
+    //             {
+    //                 direction = Vector3.right;
+    //             }
+    //             else
+    //             {
+    //                 direction = Vector3.left;
+    //             }
+    //             
+    //             backList.Add(pointsList[i] + Vector3.back + direction);
+    //             upList.Add(pointsList[i] + Vector3.up + direction);
+    //             forwardList.Add(pointsList[i] + Vector3.forward + direction);
+    //             downList.Add(pointsList[i] + Vector3.down + direction);
+    //         }
+    //
+    //         finalList.Add(pointsList[0]);
+    //         for (int i = 0; i < upList.Count; i++)
+    //         {
+    //             finalList.Add(backList[i]);
+    //             finalList.Add(upList[i]);
+    //             finalList.Add(forwardList[i]);
+    //             finalList.Add(downList[i]);
+    //         }
+    //         
+    //         finalList.Add(pointsList[pointsList.Count-1] + (2f*direction));
+    //
+    //         // Assign the points to the mesh's vertices
+    //         mesh.vertices = finalList.ToArray();
+    //         mesh.uv = ConvertArray(mesh.vertices);
+    //         
+    //         List<int> triangles = new List<int>();
+    //         for (int i = 0; i < 4; i++)
+    //         {
+    //             triangles.Add(0);
+    //             triangles.Add(i + 2);
+    //             triangles.Add(i + 1);
+    //         }
+    //
+    //         triangles[10] = 1;
+    //         
+    //         if (backList.Count>1)
+    //         {
+    //             for (int i = 0; i < backList.Count-1; i++)
+    //             {
+    //                 triangles.Add((i*4)+1);
+    //                 triangles.Add((i*4)+6);
+    //                 triangles.Add((i*4)+5);
+    //                 triangles.Add((i*4)+1);
+    //                 triangles.Add((i*4)+2);
+    //                 triangles.Add((i*4)+6);
+    //                 
+    //             }
+    //             for (int i = 0; i < upList.Count-1; i++)
+    //             {
+    //                 triangles.Add((i*4)+2);
+    //                 triangles.Add((i*4)+7);
+    //                 triangles.Add((i*4)+6);
+    //                 triangles.Add((i*4)+2);
+    //                 triangles.Add((i*4)+3);
+    //                 triangles.Add((i*4)+7);
+    //                 
+    //             }
+    //             for (int i = 0; i < forwardList.Count-1; i++)
+    //             {
+    //                 triangles.Add((i*4)+3);
+    //                 triangles.Add((i*4)+8);
+    //                 triangles.Add((i*4)+7);
+    //                 triangles.Add((i*4)+3);
+    //                 triangles.Add((i*4)+4);
+    //                 triangles.Add((i*4)+8);
+    //                
+    //             }
+    //             for (int i = 0; i < downList.Count-1; i++)
+    //             {
+    //                 triangles.Add((i*4)+4);
+    //                 triangles.Add((i*4)+5);
+    //                 triangles.Add((i*4)+8);
+    //                 triangles.Add((i*4)+4);
+    //                 triangles.Add((i*4)+1);
+    //                 triangles.Add((i*4)+5);
+    //                 
+    //             }
+    //         }
+    //         
+    //         for (int i = finalList.Count-5; i < finalList.Count - 1; i++)
+    //         {
+    //             triangles.Add(finalList.Count - 1);
+    //             triangles.Add(i);
+    //             triangles.Add(i + 1);
+    //         }
+    //         
+    //         triangles[triangles.Count - 1] = finalList.Count - 5;
+    //         //triangles.Reverse();
+    //         mesh.triangles = triangles.ToArray();
+    //         mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
+    //         mesh.RecalculateNormals();
+    //
+    //         chuteObj.meshFilter.mesh = mesh;
+    //         chuteObj.meshCollider.sharedMesh = mesh;
+    //
+    //         var parent = chuteObj.transform.parent;
+    //         chuteObj.transform.SetParent(null);
+    //         parent.transform.position = chuteObj.meshCollider.bounds.center;
+    //         chuteObj.transform.SetParent(parent);
+    //         parent.transform.position = Vector3.zero;
+    //     }
+    // }
 }
