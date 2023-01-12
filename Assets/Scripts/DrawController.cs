@@ -107,30 +107,68 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
             finalList.Add(pointsList[0]);
             for (int i = 0; i < upList.Count; i++)
             {
-                finalList.Add(forwardList[i]);
-                finalList.Add(upList[i]);
                 finalList.Add(backList[i]);
+                finalList.Add(upList[i]);
+                finalList.Add(forwardList[i]);
                 finalList.Add(downList[i]);
             }
-            finalList.Add(pointsList[pointsList.Count-1] + Vector3.right);
-            
+            finalList.Add(pointsList[pointsList.Count-1] + (2f*Vector3.right));
+
             // Assign the points to the mesh's vertices
             mesh.vertices = finalList.ToArray();
             mesh.uv = ConvertArray(mesh.vertices);
             
-            int[] triangles = new int[upList.Count * 8 * 3];
-            int index = 0;
+            List<int> triangles = new List<int>();
             for (int i = 0; i < 4; i++)
             {
-                triangles[index] = 0;
-                triangles[index + 1] = i + 1;
-                triangles[index + 2] = i + 2;
-                index += 3;
+                triangles.Add(0);
+                triangles.Add(i + 2);
+                triangles.Add(i + 1);
             }
-
-            triangles[11] = 1;
             
-            mesh.triangles = triangles;
+            triangles[10] = 1;
+            
+            if (backList.Count>1)
+            {
+                for (int i = 0; i < backList.Count-1; i++)
+                {
+                    triangles.Add((i*4)+1);
+                    triangles.Add((i*4)+6);
+                    triangles.Add((i*4)+5);
+                    
+                }
+                for (int i = 0; i < upList.Count-1; i++)
+                {
+                    triangles.Add((i*4)+2);
+                    triangles.Add((i*4)+7);
+                    triangles.Add((i*4)+6);
+                    
+                }
+                for (int i = 0; i < forwardList.Count-1; i++)
+                {
+                    triangles.Add((i*4)+3);
+                    triangles.Add((i*4)+8);
+                    triangles.Add((i*4)+7);
+                   
+                }
+                for (int i = 0; i < downList.Count-1; i++)
+                {
+                    triangles.Add((i*4)+4);
+                    triangles.Add((i*4)+5);
+                    triangles.Add((i*4)+8);
+                }
+            }
+            
+            for (int i = finalList.Count-5; i < finalList.Count - 1; i++)
+            {
+                triangles.Add(finalList.Count - 1);
+                triangles.Add(i);
+                triangles.Add(i + 1);
+            }
+            
+            triangles[triangles.Count - 1] = finalList.Count - 5;
+            
+            mesh.triangles = triangles.ToArray();
             mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
             mesh.RecalculateNormals();
             

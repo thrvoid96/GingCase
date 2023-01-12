@@ -27,5 +27,7 @@ public class Test : MonoBehaviour
             
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
+        
+        mesh.triangles =  new int[] {2,6,7,7,3,2,6,10,11,11,7,6};
     }
 }
