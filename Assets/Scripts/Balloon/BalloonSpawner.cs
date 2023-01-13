@@ -8,10 +8,11 @@ using Random = UnityEngine.Random;
 public class BalloonSpawner : MonoBehaviour
 {
     [SerializeField] private int maxBallons;
+    [SerializeField] private int spawnRate;
     private Tween spawnTween;
     private void Start()
     {
-        spawnTween = DOVirtual.DelayedCall(1f, SpawnBalloon).SetLoops(-1, LoopType.Restart);
+        spawnTween = DOVirtual.DelayedCall(1f/spawnRate, SpawnBalloon).SetLoops(-1, LoopType.Restart);
     }
 
     private void SpawnBalloon()
