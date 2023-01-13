@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class Chute : MonoBehaviour, IPooledObject
 {
-    //[field: SerializeField] public MeshFilter meshFilter { get; private set; }
-    //[field: SerializeField] public MeshCollider meshCollider{ get; private set;}
-    [field: SerializeField] public Rigidbody rb{ get; private set;}
+    [field: SerializeField] public MeshFilter meshFilter { get; private set; }
+    [field: SerializeField] public MeshCollider meshCollider{ get; private set; }
+    [field: SerializeField] public MeshRenderer meshRenderer { get; private set; }
+    [field: SerializeField] public Rigidbody rb{ get; private set; }
     public void OnObjectSpawn()
     {
         
@@ -14,8 +15,6 @@ public class Chute : MonoBehaviour, IPooledObject
 
     public void OnObjectDeactivated()
     {
-        //meshFilter.mesh = null;
-        //meshCollider.sharedMesh = null;
         transform.parent.SetParent(ObjectPool.Instance.GetPoolParent(PoolEnums.Chute));
         transform.parent.gameObject.SetActive(false);
     }

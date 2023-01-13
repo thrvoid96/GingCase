@@ -6,9 +6,11 @@ using UnityEngine;
 
 public class BalloonHolder : Singleton<BalloonHolder>
 {
-    [HideInInspector] public List<Balloon> currentBalloons = new List<Balloon>();
-    public Rigidbody rb { get; private set; }
-
+    private List<Balloon> currentBalloons = new List<Balloon>();
+    public List<Balloon> getCurrentBalloonsList => currentBalloons;
+    
+    private Rigidbody rb;
+    
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -17,6 +19,7 @@ public class BalloonHolder : Singleton<BalloonHolder>
     public void AddToList(Balloon balloon)
     {
         currentBalloons.Add(balloon);
+        balloon.springJoint.connectedBody = rb;
     }
 
     public void RemoveFromList(Balloon balloon)

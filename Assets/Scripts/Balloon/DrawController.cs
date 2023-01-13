@@ -11,7 +11,7 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
     private List<Vector3> pointsList = new List<Vector3>();
     [SerializeField] private LineRenderer lineRenderer;
     
-    private bool canDraw, isDrawing;
+    private bool canDraw;
     private Chute chuteObj;
     
     
@@ -20,7 +20,6 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
         canDraw = true;
     }
     
-
     public void OnPointerExit(PointerEventData eventData)
     {
         canDraw = false;
@@ -28,10 +27,9 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        //Add the first point to list on touch
         Vector3 touchPos = Camera.main.transform.InverseTransformPoint(Camera.main.ScreenToWorldPoint(new Vector3(eventData.position.x, eventData.position.y, 7f)));
         UpdatePointsList(touchPos);
-        
-        isDrawing = true;
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -48,12 +46,14 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
             
             var distance = Vector3.Distance(startPoint, touchPos);
             
-            if (distance< 0.25f) { return; }
+            // Dont take the input if it's too close to the last one
+            if (distance< 0.1f) { return; }
             
-            float pointDistance = 0.25f;
+            float pointDistance = 0.1f;
             int numPoints = (int)(distance / pointDistance);
             float increment = 1.0f / (numPoints + 1);
 
+            // Fill in the blanks if the last two inputs were too apart from each other
             for (int i = 0; i < numPoints; i++) {
                 float t = increment * (i + 1);
                 
@@ -65,14 +65,16 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        isDrawing = false;
-        
+        //Deactivate the last object
         if(chuteObj != null) 
         {
             chuteObj.TryGetComponent<IPooledObject>(out var deactivateable);
             deactivateable?.OnObjectDeactivated();
         }
+        
+        //OLD CODE FOR CREATING MESH FROM POINTS AT RUNTIME (You can test it if you want, but there were some problems and the code is not optimized)
         //CreateMesh();
+        
         CreateFakeMesh();
         pointsList.Clear();
         lineRenderer.positionCount = 0;
@@ -82,11 +84,13 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
     {
         chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute,Vector3.zero , Quaternion.identity, null).transform.GetChild(0).GetComponent<Chute>();
         
-        for (int i = 0; i < pointsList.Count; i++)
+        //Spawn the chutePart object on every 3 points because of the size
+        for (int i = 0; i < pointsList.Count; i+=3)
         {
             ObjectPool.Instance.SpawnFromPool(PoolEnums.ChutePart, pointsList[i], Quaternion.Euler(new Vector3(90f,0f,0f)), chuteObj.transform);
         }
         
+        //Set the parent object's center to the spawned chute parts so we can move the parent to a desired position if needed
         var parent = chuteObj.transform.parent;
         var center = chuteObj.rb.centerOfMass;
         chuteObj.transform.SetParent(null);
@@ -102,20 +106,14 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
         lineRenderer.SetPositions(pointsList.ToArray());
     }
     
-    Vector2[] ConvertArray(Vector3[] v3){
-        Vector2 [] v2 = new Vector2[v3.Length];
-        for(int i = 0; i <  v3.Length; i++){
-            Vector3 tempV3 = v3[i];
-            v2[i] = new Vector2(tempV3.x, tempV3.y);
-        }
-        return v2;
-    }
-    
     // private void CreateMesh()
     // {
     //     if (pointsList.Count >= 3)
     //     {
     //         chuteObj = ObjectPool.Instance.SpawnFromPool(PoolEnums.Chute,Vector3.zero , Quaternion.identity, null).transform.GetChild(0).GetComponent<Chute>();
+    //         chuteObj.meshCollider.enabled = true;
+    //         chuteObj.meshRenderer.enabled = true;
+    //         
     //         var mesh = chuteObj.meshFilter.mesh;
     //         mesh.Clear();
     //
@@ -234,5 +232,14 @@ public class DrawController : MonoBehaviour, IPointerDownHandler, IDragHandler, 
     //         chuteObj.transform.SetParent(parent);
     //         parent.transform.position = Vector3.zero;
     //     }
+    // }
+    //
+    // Vector2[] ConvertArray(Vector3[] v3){
+    //     Vector2 [] v2 = new Vector2[v3.Length];
+    //     for(int i = 0; i <  v3.Length; i++){
+    //         Vector3 tempV3 = v3[i];
+    //         v2[i] = new Vector2(tempV3.x, tempV3.y);
+    //     }
+    //     return v2;
     // }
 }

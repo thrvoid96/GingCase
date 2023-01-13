@@ -12,7 +12,8 @@ GameObject:
   - component: {fileID: 4008892642064429372}
   - component: {fileID: 4008892642064429373}
   - component: {fileID: 2112988286477148801}
-  m_Layer: 0
+  - component: {fileID: 707940293584050641}
+  m_Layer: 7
   m_Name: Chute
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +95,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6c15513f7b48ab44b789edc15681095, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <meshFilter>k__BackingField: {fileID: 4008892642064429372}
+  <meshCollider>k__BackingField: {fileID: 707940293584050641}
+  <meshRenderer>k__BackingField: {fileID: 4008892642064429373}
   <rb>k__BackingField: {fileID: 4743171821346107152}
+--- !u!64 &707940293584050641
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4008892642064429371}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 0
+  serializedVersion: 4
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &6430208100664069689
 GameObject:
   m_ObjectHideFlags: 0

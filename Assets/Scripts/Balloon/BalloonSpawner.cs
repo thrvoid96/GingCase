@@ -16,7 +16,7 @@ public class BalloonSpawner : MonoBehaviour
 
     private void SpawnBalloon()
     {
-        if (BalloonHolder.Instance.currentBalloons.Count >= maxBallons)
+        if (BalloonHolder.Instance.getCurrentBalloonsList.Count >= maxBallons)
         {
             spawnTween.Kill();
             return;
@@ -24,6 +24,6 @@ public class BalloonSpawner : MonoBehaviour
         ObjectPool.Instance.SpawnFromPool(PoolEnums.Balloon, 
             BalloonHolder.Instance.transform.position + 
             new Vector3(Random.Range(-0.1f,0.1f),0f,Random.Range(-0.1f,0.1f)),
-            Quaternion.Euler(new Vector3(-90f,0f,0f)), BalloonHolder.Instance.transform);
+            Quaternion.Euler(new Vector3(90f,0f,0f)), BalloonHolder.Instance.transform);
     }
 }
